@@ -29,14 +29,14 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-          cache-dependency-path: 'blockvax/frontend/package-lock.json'
+          cache-dependency-path: 'frontend/package-lock.json'
 
       - name: Install Frontend Dependencies
-        working-directory: blockvax/frontend
+        working-directory: frontend
         run: npm ci
 
       - name: Build Production Frontend
-        working-directory: blockvax/frontend
+        working-directory: frontend
         run: npm run build
 
       - name: Setup Pages
@@ -45,7 +45,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'blockvax/frontend/dist'
+          path: 'frontend/dist'
 
       - name: Deploy to GitHub Pages
         id: deployment
