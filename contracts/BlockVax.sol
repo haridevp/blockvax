@@ -348,21 +348,45 @@ contract BlockVax {
     // -------------------------------------------------------------
     // Checkpoint & Temperature Excursion Recording
     // -------------------------------------------------------------
-    /**
-     * @notice Anchor a periodic temperature checkpoint and evidence hash on-chain.
-     * @dev Only current custodian or admin can record checkpoint.
-     *      Calculates violation against configured batch temperature boundaries.
-     *      Permanent excursion flag is never erased even if temperature later normalizes.
-     * @param batchId Target batch identifier
-     * @param locationOrStage Shipment leg or cold storage checkpoint description
-     * @param minObserved Minimum recorded temperature in the checkpoint window
-     * @param maxObserved Maximum recorded temperature in the checkpoint window
-     * @param avgObserved Average recorded temperature in the checkpoint window
-     * @param sampleCount Number of software simulated readings in this batch
-     * @param manualExcursionFlag Explicit excursion flag reported by validator
-     * @param evidenceHash Cryptographic Keccak256 hash of the detailed simulated readings
-     * @param notes Checkpoint observations
-     */
+    function _handleExcursion(
+        string calldata batchId,
+        string calldata locationOrStage,
+        int256 minObserved,
+        int256 maxObserved
+    ) internal {
+        Batch storage batch = batches[batchId];
+        batch.hasExcursion = true;
+        batch.excursionCount += 1;
+        batch.status = BatchStatus.EXCURSION_DETECTED;
+
+        emit ExcursionRecorded(
+            batchId,
+            msg.sender,
+            block.timestamp,
+            locationOrStage,
+            minObserved,
+            maxObserved
+        );
+    }
+
+    function _emitCheckpoint(
+        string calldata batchId,
+        bytes32 evidenceHash,
+        bool isExcursion,
+        int256 minObserved,
+        int256 maxObserved
+    ) internal {
+        emit CheckpointRecorded(
+            batchId,
+            msg.sender,
+            block.timestamp,
+            evidenceHash,
+            isExcursion,
+            minObserved,
+            maxObserved
+        );
+    }
+
     function recordCheckpoint(
         string calldata batchId,
         string calldata locationOrStage,
@@ -374,52 +398,29 @@ contract BlockVax {
         bytes32 evidenceHash,
         string calldata notes
     ) external onlyAuthorizedCustodian(batchId) {
-        Batch storage batch = batches[batchId];
-
-        // Evaluate out-of-range condition against batch's specific configured limits
         bool isExcursion = manualExcursionFlag ||
-            (minObserved < batch.minTemp) ||
-            (maxObserved > batch.maxTemp);
+            (minObserved < batches[batchId].minTemp) ||
+            (maxObserved > batches[batchId].maxTemp);
 
         if (isExcursion) {
-            batch.hasExcursion = true;
-            batch.excursionCount += 1;
-            batch.status = BatchStatus.EXCURSION_DETECTED;
-
-            emit ExcursionRecorded(
-                batchId,
-                msg.sender,
-                block.timestamp,
-                locationOrStage,
-                minObserved,
-                maxObserved
-            );
+            _handleExcursion(batchId, locationOrStage, minObserved, maxObserved);
         }
 
-        checkpointHistories[batchId].push(
-            CheckpointEvidence({
-                timestamp: block.timestamp,
-                recordedBy: msg.sender,
-                locationOrStage: locationOrStage,
-                minObservedTemp: minObserved,
-                maxObservedTemp: maxObserved,
-                avgObservedTemp: avgObserved,
-                sampleCount: sampleCount,
-                excursionDetected: isExcursion,
-                evidenceHash: evidenceHash,
-                notes: notes
-            })
-        );
+        {
+            CheckpointEvidence storage cp = checkpointHistories[batchId].push();
+            cp.timestamp = block.timestamp;
+            cp.recordedBy = msg.sender;
+            cp.locationOrStage = locationOrStage;
+            cp.minObservedTemp = minObserved;
+            cp.maxObservedTemp = maxObserved;
+            cp.avgObservedTemp = avgObserved;
+            cp.sampleCount = sampleCount;
+            cp.excursionDetected = isExcursion;
+            cp.evidenceHash = evidenceHash;
+            cp.notes = notes;
+        }
 
-        emit CheckpointRecorded(
-            batchId,
-            msg.sender,
-            block.timestamp,
-            evidenceHash,
-            isExcursion,
-            minObserved,
-            maxObserved
-        );
+        _emitCheckpoint(batchId, evidenceHash, isExcursion, minObserved, maxObserved);
     }
 
     /**
