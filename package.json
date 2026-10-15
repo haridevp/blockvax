@@ -1,0 +1,20 @@
+{
+  "name": "blockvax",
+  "version": "1.0.0",
+  "description": "Software-Only Blockchain-Based Cold Chain Verification System",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "node": "hardhat node",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia"
+  },
+  "keywords": ["blockchain", "cold-chain", "vaccine", "ethereum", "sepolia", "hardhat"],
+  "author": "BlockVax Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "dotenv": "^16.4.7",
+    "hardhat": "^2.22.18"
+  }
+}

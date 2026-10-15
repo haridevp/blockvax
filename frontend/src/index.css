@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 font-sans antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #020617;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Print Styles for Cold-Chain Compliance Certificates */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  header, aside, button, nav, .no-print {
+    display: none !important;
+  }
+
+  .printable-cert {
+    border: 2px solid #0f172a !important;
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 24px !important;
+    width: 100% !important;
+  }
+
+  .printable-cert * {
+    color: black !important;
+  }
+
+  .printable-cert .text-sky-400,
+  .printable-cert .text-sky-300 {
+    color: #0369a1 !important;
+  }
+}
