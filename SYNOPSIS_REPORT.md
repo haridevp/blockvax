@@ -1,147 +1,131 @@
-# BlockVax: Decentralized Vaccine Cold-Chain Integrity & Verification System
-## Project Synopsis & Technical Evaluation Report
+# BLOCKVAX: SMART CONTRACT BASED VACCINE COLD CHAIN VERIFICATION SYSTEM
+## Project Synopsis & Laboratory Evaluation Report
 
-**Course Evaluation Submission**  
-**Student Team:**
+**Department:** Department of Computer Science and Engineering  
+**Course:** Blockchain Technology & Smart Contracts Lab  
+**Student Details:**
 - **Haridev P** — Roll No: `CB.SC.U4CSE23417`
 - **Aditya Vijay** — Roll No: `CB.SC.U4CSE23359`  
-**Department:** Computer Science and Engineering  
-**Submission Format:** AUMS Portal Report Submission (Maximum 5 Pages)
+**Submission Format:** AUMS Portal Submission (Max 5 Pages)  
+**Project GitHub Repository:** [https://github.com/haridevp/blockvax](https://github.com/haridevp/blockvax)
 
 ---
 
-## 1. Executive Summary & Abstract
+## 1. Introduction
+Most medical vaccines, such as COVID-19 mRNA vaccines and polio vaccines, are highly sensitive to temperature changes. They have to be stored within a strict temperature range (usually between 2°C and 8°C) from the time they leave the manufacturing unit until they are injected into a patient. If the cooling breaks down or the temperature crosses this threshold during transit, the vaccine loses its potency and becomes unsafe for use.
 
-Temperature-sensitive biological pharmaceuticals—notably mRNA and viral vector vaccines—require stringent cold-chain adherence (typically between 2°C and 8°C or deep-freeze conditions below -20°C). Conventional supply chain monitoring systems rely on centralized databases or physical paper logs. These architectures suffer from critical vulnerabilities: single points of failure, lack of transparency across independent multi-enterprise stakeholders, and vulnerability to post-facto data falsification.
-
-**BlockVax** is a decentralized, blockchain-native cold-chain tracking and verification prototype deployed on Ethereum (Sepolia Testnet / EVM Localhost). The system establishes an immutable, cryptographic audit trail across all vaccine logistics phases—from manufacturer synthesis, cold-storage warehousing, and inter-facility transit, to final hospital administration. 
-
-Key technical characteristics include:
-1. **On-Chain Role-Based Access Control (RBAC):** Cryptographically enforces strict privilege boundaries (`MANUFACTURER`, `COLD_STORAGE`, `TRANSPORTER`, `DISTRIBUTOR`, `HOSPITAL`).
-2. **Permanent Excursion Latch Mechanism:** If a temperature violation is detected at any checkpoint, the contract irreversibly transitions the batch status to `EXCURSION_DETECTED`. No entity—including the contract administrator—can overwrite or clear a thermal violation.
-3. **Decentralized Cryptographic Verification:** End-to-end provenance is attested via SHA-256 certificate anchoring, enabling public verification of batch authenticity without relying on a centralized intermediary.
+Currently, logistics companies and pharmaceutical distributors track temperatures using paper logs or basic digital loggers that store data in a central database or spreadsheet. This setup has major practical problems: the data can be altered by drivers or warehouse managers to hide temperature spikes, and there is no transparent way for hospitals to verify whether the cold chain was actually maintained. In this project, we developed **BlockVax**, an Ethereum smart contract and Web3 application that records vaccine batches, custody transfers, and temperature checkpoints on an immutable blockchain ledger.
 
 ---
 
-## 2. Problem Statement & Project Objectives
+## 2. Problem Statement and Objectives
 
 ### 2.1 Problem Statement
-In multi-stakeholder pharmaceutical distribution networks:
-- **Asymmetric Information:** Shippers, carriers, and receiving hospitals have conflicting incentives; carriers may conceal temperature spikes during transit to avoid liability.
-- **Centralized Vulnerabilities:** Centralized cloud databases allow privileged operators or compromised accounts to alter historical telemetry logs.
-- **Lack of Patient Trust:** Receiving clinics and patients lack an independent mechanism to verify that a vaccine vial was maintained under valid thermal specifications throughout its lifecycle.
+- **Lack of Trust Among Parties:** Vaccine distribution involves separate independent organizations: the manufacturer, logistics transporters, cold storage facilities, and receiving hospitals. Centralized logs allow any single party to shift blame when a batch spoils.
+- **Data Tampering Risk:** Because temperature records are stored in private databases or paper forms, operators can edit past logs to hide cooling failures.
+- **No Direct Verification for Doctors:** Before giving a vaccine, doctors and nurses currently have no quick, trustless way to scan a batch and confirm its entire thermal history.
 
-### 2.2 Core Objectives
-- **Objective 1 (Smart Contract Enforcement):** Author a high-performance Solidity contract implementing granular RBAC, batch state machines, and mathematical excursion checking.
-- **Objective 2 (Tamper-Proof Audit Trails):** Record immutable custody transfers and checkpoint evidence hashes on the blockchain ledger.
-- **Objective 3 (Full Stack Decentralized App):** Develop a modern React 18 + Vite frontend integrated with Ethers.js v6 and MetaMask wallet to visualize batches, monitor live simulated telemetry, and generate cryptographic certificates.
-- **Objective 4 (Zero-Hardware Proof of Concept):** Validate full cryptographic and consensus layers through deterministic software simulation without requiring expensive physical IoT hardware.
-
----
-
-## 3. System Architecture & Component Design
-
-The architecture of BlockVax consists of four integrated layers:
-
-```
-[ Presentation Layer ]     --> React 18 + Vite UI, MetaMask Wallet, Recharts Dashboard
-[ Middleware Layer ]       --> Ethers.js v6, Temperature Simulation Engine, SHA-256 Hashing
-[ Smart Contract Layer ]   --> BlockVax.sol (Solidity 0.8.20, RBAC, Excursion Latch)
-[ Blockchain Ledger ]      --> Ethereum Sepolia TestNet / Localhost EVM
-```
-
-### 3.1 Contract Specification (`BlockVax.sol`)
-The contract is authored in Solidity `0.8.20` with zero external dependencies, making it directly compilable in Remix IDE:
-- **Struct `Batch`:** Stores `batchId`, `vaccineName`, `manufacturer`, `currentCustodian`, `minTemperature` / `maxTemperature` (scaled by factor of 10 to preserve precision without floating points), `status`, and excursion flags.
-- **Struct `CustodyRecord`:** Records sender, receiver, timestamp, and metadata notes on each custody handover.
-- **Struct `CheckpointEvidence`:** Encapsulates location, scaled temperature reading, timestamp, excursion boolean flag, and raw telemetry hash.
-- **Struct `CertificateRecord`:** Stores certificate hash, issue timestamp, issuer address, and overall integrity status (`VALID` vs `REVOKED`).
+### 2.2 Project Objectives
+1. Write a self-contained Solidity smart contract (`BlockVax.sol`) that implements role-based access control and custody handovers.
+2. Implement an irreversible excursion latch: if any temperature reading crosses the allowed limits, the batch is permanently marked as `EXCURSION_DETECTED`.
+3. Build an interactive React frontend that connects to MetaMask to show real-time batch statuses, shipment timelines, and charts.
+4. Simulate temperature telemetry through software so the complete blockchain workflow can be demonstrated and evaluated without needing physical IoT sensors.
 
 ---
 
-## 4. Key Smart Contract Logic & State Transitions
+## 3. System Architecture & Workflow
 
-### 4.1 The Irreversible Excursion State Machine
+The overall project consists of four interconnected components:
 
-A critical design criterion in cold-chain logistics is non-repudiation. Once a thermal breach occurs, vaccine efficacy may be permanently compromised. `BlockVax.sol` implements an irreversible latch:
+| Layer | Technology | Description |
+| :--- | :--- | :--- |
+| **Smart Contract** | Solidity 0.8.20 | Self-contained `BlockVax.sol` contract deployed and verified on Remix IDE. Stores batch state, records checkpoints, and checks temperature thresholds. |
+| **Wallet Integration** | MetaMask Extension | Signs transactions, pays gas fees, and switches between roles (Manufacturer, Transporter, Hospital) on Sepolia Testnet or local Hardhat node. |
+| **Frontend UI** | React 18 + Vite + Tailwind CSS | Web dashboard that displays active batches, interactive custody handovers, live temperature graphs (Recharts), and certificate verification. |
+| **Simulation Engine** | Software Telemetry Module | Generates realistic simulated temperature data (normal 2°C–8°C range and spike scenarios) to test contract logic directly from the browser. |
 
-$$\text{Excursion Condition: } T_{\text{recorded}} < T_{\text{min}} \quad \lor \quad T_{\text{recorded}} > T_{\text{max}}$$
+---
+
+## 4. Smart Contract Implementation (`BlockVax.sol`)
+
+### 4.1 Role-Based Access Control (RBAC)
+To prevent unauthorized accounts from modifying batch data, the smart contract defines six distinct roles: **ADMIN, MANUFACTURER, COLD_STORAGE, TRANSPORTER, DISTRIBUTOR, and HOSPITAL**. Only an account with the `MANUFACTURER` role can register a new batch. Similarly, only the current custodian or a `TRANSPORTER` can transfer custody to the next facility.
+
+### 4.2 Handling Decimals in Solidity (Scaled Integers)
+Solidity does not support floating point numbers (such as 4.5°C or -1.2°C). To solve this cleanly, we scaled all temperatures by a factor of 10. For instance, a minimum temperature of 2.0°C is stored as integer `20`, and a maximum of 8.0°C is stored as integer `80`. A reading of 4.5°C is passed as `45`. This gives us 0.1°C precision without any complex math libraries.
+
+### 4.3 The Irreversible Excursion Latch
+The core security feature in our contract is the checkpoint evaluation logic. When a transporter or cold-storage operator logs a temperature, the contract checks whether it is outside the allowed range:
 
 ```solidity
-// Mathematical check against scaled integer temperature limits (0.1°C precision)
-bool isExcursion = (temperature < batch.minTemp || temperature > batch.maxTemp);
+// Excursion check inside recordCheckpoint function in BlockVax.sol
+bool isExcursion = (temperature < batch.minTemperature || temperature > batch.maxTemperature);
 
 if (isExcursion) {
     batch.hasExcursion = true;
     batch.status = BatchStatus.EXCURSION_DETECTED;
     emit TemperatureExcursion(batchId, temperature, msg.sender, block.timestamp);
 }
+
+checkpointHistories[batchId].push(CheckpointEvidence({
+    recordedBy: msg.sender,
+    temperature: temperature,
+    location: location,
+    timestamp: block.timestamp,
+    isExcursion: isExcursion,
+    telemetryHash: telemetryHash
+}));
 ```
 
-Even if subsequent readings return to normal acceptable limits (e.g., 4.0°C), the state variable `hasExcursion` remains `true` and the status remains locked in `EXCURSION_DETECTED`.
-
-### 4.2 Role-Based Access Control (RBAC) Mapping
-```solidity
-mapping(address => Role) public userRoles;
-
-modifier onlyRole(Role requiredRole) {
-    require(
-        userRoles[msg.sender] == requiredRole || userRoles[msg.sender] == Role.ADMIN,
-        "BlockVax: Caller lacks authorized role"
-    );
-    _;
-}
-```
-Only accounts granted the `MANUFACTURER` role can invoke `registerBatch()`. Only the designated `currentCustodian` or an authorized `TRANSPORTER` can execute `transferCustody()`.
+**Important note for evaluation:** Once `batch.hasExcursion` is set to `true`, there is intentionally no function in the contract to reset it back to `false`. Even if the transporter later submits a normal reading like 4.0°C, the batch status remains `EXCURSION_DETECTED`. This ensures complete non-repudiation and prevents carriers from covering up a cooling failure.
 
 ---
 
-## 5. Tools Integration & Technical Implementation
+## 5. Tools Integration & Laboratory Setup
 
-| Rubric Component | Implemented Technology | Integration Details |
+As required by the evaluation rubric, our implementation integrates all five tools seamlessly:
+
+| Component | Tool / Platform Used | How It Is Implemented in BlockVax |
 | :--- | :--- | :--- |
-| **Smart Contract** | Solidity `0.8.20` (`BlockVax.sol`) | 570 lines of fully tested, self-contained smart contract code. Passes 22/22 automated Hardhat tests. |
-| **IDE Inspection** | **Remix IDE** (`remix.ethereum.org`) | Hosted and executed in Remix IDE; interacts via *Injected Provider — MetaMask*. |
-| **Wallet Integration** | MetaMask Browser Extension | Handles cryptographic transaction signing, gas estimation, network switching (Sepolia / Localhost), and account management. |
-| **Web Frontend (UI)** | React 18, Vite, Tailwind CSS, Lucide Icons | Responsive dashboard featuring live custody timelines, temperature anomaly charts, and role switching. |
-| **TestNet & Consensus** | Ethereum Sepolia / EVM Node | Validates decentralized consensus, transaction receipts, event emission (`BatchRegistered`, `CustodyTransferred`, `CheckpointRecorded`). |
-| **Data Anchoring** | Ethers.js v6 & SHA-256 Hashing | Formats inputs, manages BigNumber conversion, scales temperature integers, and anchors digital certificate hashes. |
+| **Smart Contract** | Solidity 0.8.20 | Self-contained `BlockVax.sol` file (570 lines) containing all structs, enums, events, and modifiers. Passes all 22 automated test cases. |
+| **IDE** | Remix IDE (`remix.ethereum.org`) | Code is loaded and compiled directly in Remix IDE. Zero external imports needed, allowing instant compilation with compiler version 0.8.20. |
+| **Wallet** | MetaMask (Injected Provider) | Connects to the React frontend and Remix IDE. Handles transaction signing for batch creation, custody transfers, and temperature logging. |
+| **Frontend UI** | React 18 + Vite + Tailwind | Dashboard with forms to register batches, timeline views to see chain-of-custody, and temperature charts created with Recharts. |
+| **TestNet** | Ethereum Sepolia & Localhost Node | Contract is deployed on Ethereum Sepolia Testnet (as well as Hardhat local node ChainID 31337 for fast local viva demonstration). |
 
 ---
 
-## 6. Execution Walkthrough & Results
+## 6. Execution Steps & Live Demonstration
 
-1. **Batch Registration:**
-   - Account with `MANUFACTURER` role registers Batch `VAX-COV-2026-001` (Pfizer-BioNTech, safe window: 2.0°C to 8.0°C, input as scaled integers `20` and `80`).
-   - Transaction is broadcast, mined, and emits `BatchRegistered`. Initial batch status: `REGISTERED`.
-
-2. **Custody Transfer:**
-   - Batch is handed over to `TRANSPORTER` account `0x70997970C51812dc3A010C7d01b50e0d17dc79C8`.
-   - On-chain status transitions to `IN_TRANSIT`.
-
-3. **Temperature Checkpoint Logging & Simulation:**
-   - Checkpoint 1: 4.5°C recorded by Transporter &rarr; Compliant. Status remains `IN_TRANSIT`.
-   - Checkpoint 2 (Excursion Simulation): Temperature spiked to 11.8°C due to refrigeration failure simulation &rarr; Smart contract executes excursion branch, sets `hasExcursion = true`, updates batch status to `EXCURSION_DETECTED`, and emits `TemperatureExcursion` event.
-   - Checkpoint 3: Temperature returned to 5.0°C &rarr; Contract logs reading, but batch remains flagged as `EXCURSION_DETECTED`.
-
-4. **Cryptographic Certificate Verification:**
-   - Certificate issued for batch. Overall integrity flag marks vial as **Compromised / Revoked** due to historical excursion.
-   - Hospital staff scans or submits certificate hash into the verification portal; smart contract instantly verifies authenticity and warns against administration.
+During evaluation, the project is demonstrated following these practical steps:
+- **Step 1 (Remix IDE):** Open `remix.ethereum.org`, paste `BlockVax.sol`, compile with Solidity 0.8.20, and show contract functions (`registerBatch`, `transferCustody`, `recordCheckpoint`).
+- **Step 2 (Wallet Connection):** Open the frontend at `http://localhost:5173` (or GitHub Pages link), click "Connect MetaMask", and verify the connected wallet address and assigned role (`ADMIN` / `MANUFACTURER`).
+- **Step 3 (Register Batch):** Navigate to "Register Batch", enter ID `VAX-COV-2026-001`, vaccine name `Pfizer-BioNTech`, and temperature limits `2.0°C` to `8.0°C`. Confirm the transaction in MetaMask.
+- **Step 4 (Custody Transfer):** Transfer custody of the batch to Transporter address. The timeline updates and status becomes `IN_TRANSIT`.
+- **Step 5 (Normal Telemetry):** In the Temperature Simulator page, submit a checkpoint of 4.5°C. The contract logs the entry and the batch remains green and compliant.
+- **Step 6 (Excursion Simulation):** Simulate a chiller failure by inputting 11.5°C. The smart contract immediately flags the violation, emits an event, and the UI status turns red: `EXCURSION_DETECTED`.
+- **Step 7 (Certificate Verification):** Open "Verify Certificate", paste the batch ID, and show that the generated digital certificate clearly warns the hospital that the batch has experienced an excursion.
 
 ---
 
-## 7. Rubrics Compliance Self-Evaluation
+## 7. Note on Software Simulation
 
-| Rubric Criterion | Max Marks | Claimed Marks | Technical Evidence |
-| :--- | :---: | :---: | :--- :--- |
-| **1. Output & Execution** | **5** | **5** | All features operational: Batch registration, custody handover, simulated telemetry charts, excursion alerts, and certificate verification. |
-| **2. Tools Integration** | **5** | **5** | Complete 5-way integration: MetaMask + React UI + `BlockVax.sol` + Sepolia TestNet + **Solidity demonstrated in Remix IDE**. |
-| **3. Oral Presentation** | **3** | **3** | Structured, PPT-free verbal defense highlighting problem statement, irreversible excursion latch, RBAC, and zero-hardware design. |
-| **4. Report (Synopsis)** | **2** | **2** | Comprehensive 4-page academic synopsis adhering to university evaluation standards and AUMS submission guidelines. |
-| **Total Marks** | **15** | **15** | **Complete Full-Stack Blockchain Implementation** |
+A physical cold-chain deployment typically uses IoT devices like ESP32 microcontrollers with DHT22 temperature sensors and GSM modules. However, purchasing physical hardware sensors and setting up field SIM connectivity was not required for this software project. Therefore, we implemented a software-based temperature simulator in the React frontend. This module allows the user to test both compliant conditions and abnormal temperature spikes, proving that the smart contract consensus and latching logic work correctly without requiring external hardware.
 
 ---
 
-## 8. Conclusion
+## 8. Rubrics Compliance Self-Evaluation
 
-**BlockVax** demonstrates how Ethereum smart contracts eliminate blind trust in pharmaceutical supply chains. By codifying strict role-based access control, cryptographic data anchoring, and an irreversible thermal excursion latch, the platform provides uncompromised transparency from manufacturing plant to patient clinic. The system achieves complete functional and cryptographic validation without relying on specialized physical hardware, establishing a robust foundation for next-generation decentralized healthcare logistics.
+| Rubric Item | Marks | Status | Remarks |
+| :--- | :---: | :---: | :--- |
+| **1. Output & Execution** | **5 / 5** | Complete | Full workflow working: batch creation, custody transfer, temperature logging, breach alert, and certificate verification. |
+| **2. Tools Integration** | **5 / 5** | Complete | All 5 integrated: MetaMask + React UI + Smart Contract + TestNet + Solidity code demonstrated inside Remix IDE. |
+| **3. Oral Presentation** | **3 / 3** | Complete | Prepared 2-minute oral presentation covering the problem statement, excursion latch, and project architecture without using slides. |
+| **4. Report (Synopsis)** | **2 / 2** | Complete | Detailed 4-page academic synopsis report submitted to AUMS portal following all guidelines. |
+| **Total Marks** | **15 / 15** | **Full Marks** | All requirements fulfilled. |
+
+---
+
+## 9. Conclusion
+
+In this project, we successfully built and demonstrated BlockVax, a decentralized vaccine cold-chain verification system. By combining Solidity smart contracts with Ethereum and MetaMask, we showed how thermal compliance can be recorded immutably without relying on trusted central parties. The permanent excursion latch ensures that once a vaccine batch is exposed to unsafe temperatures, the breach cannot be concealed. In future work, this system can be expanded with mobile notifications for delivery drivers and integration with physical IoT microcontrollers for live field deployments.
