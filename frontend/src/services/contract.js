@@ -10,7 +10,7 @@ export const CONTRACT_ADDRESS =
   "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 
 export const SEPOLIA_RPC_URL =
-  import.meta.env.VITE_SEPOLIA_RPC_URL || "https://rpc.sepolia.org";
+  import.meta.env.VITE_SEPOLIA_RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com";
 
 export const ROLES = {
   0: "None",

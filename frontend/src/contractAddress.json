@@ -1,6 +1,6 @@
 {
-  "network": "localhost",
-  "chainId": "31337",
-  "contractAddress": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-  "deployedAt": "2026-10-15T17:54:25.716Z"
+  "network": "sepolia",
+  "chainId": "11155111",
+  "contractAddress": "0x9BBBC6FA9317EeC420aa34fCcFF49a4769118687",
+  "deployedAt": "2026-10-16T11:26:00.000Z"
 }
