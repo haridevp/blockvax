@@ -16,6 +16,9 @@ import {
   Flame,
   Snowflake,
   HelpCircle,
+  AlertCircle,
+  PlusCircle,
+  RefreshCw,
 } from "lucide-react";
 import TemperatureChart from "../components/TemperatureChart";
 import StatusBadge from "../components/StatusBadge";
@@ -30,8 +33,10 @@ export default function TemperatureSimulatorPage({
   wallet,
   activeBatch,
   onSelectBatch,
+  onNavigate,
 }) {
   const [batches, setBatches] = useState([]);
+  const [isLoadingBatches, setIsLoadingBatches] = useState(true);
   const [selectedBatchId, setSelectedBatchId] = useState(
     activeBatch ? activeBatch.batchId : ""
   );
@@ -67,19 +72,35 @@ export default function TemperatureSimulatorPage({
 
   // Load available batches
   useEffect(() => {
+    let isMounted = true;
     async function load() {
+      setIsLoadingBatches(true);
       try {
         const list = await fetchAllBatches();
-        setBatches(list);
-        if (!selectedBatchId && list.length > 0) {
-          setSelectedBatchId(list[0].batchId);
-          setCurrentBatch(list[0]);
+        if (isMounted) {
+          setBatches(list);
+          if (list.length > 0) {
+            if (!selectedBatchId) {
+              setSelectedBatchId(list[0].batchId);
+              setCurrentBatch(list[0]);
+            } else {
+              const matched = list.find((b) => b.batchId === selectedBatchId) || list[0];
+              setCurrentBatch(matched);
+            }
+          }
         }
       } catch (err) {
         console.error("Could not fetch batches for simulator:", err);
+      } finally {
+        if (isMounted) {
+          setIsLoadingBatches(false);
+        }
       }
     }
     load();
+    return () => {
+      isMounted = false;
+    };
   }, [selectedBatchId]);
 
   // Handle batch selection
@@ -228,10 +249,66 @@ export default function TemperatureSimulatorPage({
     }
   };
 
-  if (!currentBatch) {
+  if (isLoadingBatches && !currentBatch) {
     return (
-      <div className="p-12 text-center text-xs text-slate-400">
-        Loading vaccine batches for temperature simulator...
+      <div className="flex flex-col items-center justify-center p-16 text-center space-y-3">
+        <RefreshCw className="w-6 h-6 text-sky-400 animate-spin" />
+        <div className="text-sm font-medium text-slate-300">
+          Loading vaccine batches from blockchain...
+        </div>
+        <div className="text-xs text-slate-500">
+          Querying smart contract for registered cold-chain batches
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentBatch && batches.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-900/30 p-12 text-center max-w-lg mx-auto my-8 space-y-4">
+        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center mx-auto border border-amber-500/20">
+          <AlertCircle className="w-6 h-6" />
+        </div>
+        <div>
+          <h3 className="text-base font-semibold text-slate-200">
+            No Vaccine Batches Found on Blockchain
+          </h3>
+          <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+            The temperature simulator requires a vaccine batch to evaluate thermal limits. You can register a new batch on-chain or start with a pre-configured demo batch immediately.
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+          {onNavigate && (
+            <button
+              onClick={() => onNavigate("register")}
+              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-cyan-600 text-xs font-semibold text-white shadow-md shadow-sky-500/20 hover:from-sky-400 hover:to-cyan-500 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Register New Batch</span>
+            </button>
+          )}
+          <button
+            onClick={() => {
+              const demoBatch = {
+                batchId: "VAX-COV-2026-001",
+                vaccineName: "Pfizer-BioNTech COVID-19",
+                minTemp: 2.0,
+                maxTemp: 8.0,
+                status: "IN_TRANSIT",
+                currentCustodian: wallet?.address || "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+                hasExcursion: false,
+                isDemo: true,
+              };
+              setBatches([demoBatch]);
+              setSelectedBatchId(demoBatch.batchId);
+              setCurrentBatch(demoBatch);
+            }}
+            className="w-full sm:w-auto px-4 py-2 rounded-xl border border-slate-700 bg-slate-800/80 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-700/80 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Play className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Load Demo Batch (Instant)</span>
+          </button>
+        </div>
       </div>
     );
   }

@@ -72,6 +72,7 @@ export default function App() {
               wallet={wallet}
               activeBatch={selectedBatch}
               onSelectBatch={handleSelectBatch}
+              onNavigate={handleNavigate}
             />
           )}
 
