@@ -7,7 +7,7 @@ import localConfig from "../contractAddress.json";
 export const CONTRACT_ADDRESS =
   import.meta.env.VITE_CONTRACT_ADDRESS ||
   (localConfig && localConfig.contractAddress) ||
-  "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+  "0x9BBBC6FA9317EeC420aa34fCcFF49a4769118687";
 
 export const SEPOLIA_RPC_URL =
   import.meta.env.VITE_SEPOLIA_RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com";
